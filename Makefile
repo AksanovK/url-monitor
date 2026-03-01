@@ -1,5 +1,8 @@
 .PHONY: run test lint build docker
 
+generate:
+	sqlc generate
+
 run:
 	go run cmd/server/main.go
 

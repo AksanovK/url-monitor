@@ -41,9 +41,11 @@ jobs:
           echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+          scp -i ~/.ssh/deploy_key docker-compose.yml ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/opt/url-monitor/docker-compose.yml
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-            docker pull ${{ secrets.DOCKER_USERNAME }}/url-monitor:latest
-            docker stop url-monitor || true
-            docker rm url-monitor || true
-            docker run -d --name url-monitor -p 8080:8080 --restart unless-stopped ${{ secrets.DOCKER_USERNAME }}/url-monitor:latest
+            cd /opt/url-monitor
+            export DOCKER_IMAGE=${{ secrets.DOCKER_USERNAME }}/url-monitor:latest
+            docker pull $DOCKER_IMAGE
+            docker-compose down
+            docker-compose up -d
           EOF

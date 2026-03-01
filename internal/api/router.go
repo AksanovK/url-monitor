@@ -5,18 +5,19 @@ import (
 	"github.com/AksanovK/url-monitor/internal/service"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/AksanovK/url-monitor/internal/api/handler"
 )
 
-func NewRouter() *chi.Mux {
+func NewRouter(pool *pgxpool.Pool) *chi.Mux {
 	r := chi.NewRouter()
 
 	// Встроенные middleware — аналог Spring фильтров
 	r.Use(middleware.Logger)    // логирует каждый запрос
 	r.Use(middleware.Recoverer) // ловит panic, возвращает 500 (аналог @ExceptionHandler)
 
-	repo := repository.NewMonitorRepository()
+	repo := repository.NewMonitorRepository(pool)
 	svc := service.NewMonitorService(repo)
 	h := handler.NewMonitorHandler(svc)
 

@@ -1,47 +1,60 @@
 package repository
 
 import (
-	"sync"
+	"context"
 
+	"github.com/AksanovK/url-monitor/internal/db"
 	"github.com/AksanovK/url-monitor/internal/domain"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type MonitorRepository struct {
-	mu       sync.RWMutex
-	monitors map[string]*domain.Monitor
+	queries *db.Queries
 }
 
-func NewMonitorRepository() *MonitorRepository {
+func NewMonitorRepository(pool *pgxpool.Pool) *MonitorRepository {
 	return &MonitorRepository{
-		monitors: make(map[string]*domain.Monitor),
+		queries: db.New(pool),
 	}
 }
 
-func (r *MonitorRepository) Save(m *domain.Monitor) error {
-	r.mu.Lock()
-	r.monitors[m.ID] = m
-	r.mu.Unlock()
-	return nil
+func (r *MonitorRepository) Save(ctx context.Context, m *domain.Monitor) error {
+	return r.queries.CreateMonitor(ctx, db.CreateMonitorParams{
+		ID:             m.ID,
+		Url:            m.URL,
+		IntervalSec:    int32(m.IntervalSec),
+		ExpectedStatus: int32(m.ExpectedStatus),
+		CreatedAt:      m.CreatedAt,
+	})
 }
 
-func (r *MonitorRepository) FindAll() ([]*domain.Monitor, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+func (r *MonitorRepository) FindAll(ctx context.Context) ([]*domain.Monitor, error) {
+	rows, err := r.queries.ListMonitors(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	result := make([]*domain.Monitor, 0, len(r.monitors))
-	for _, m := range r.monitors {
-		result = append(result, m)
+	result := make([]*domain.Monitor, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, toDomain(row))
 	}
 	return result, nil
 }
 
-func (r *MonitorRepository) FindByID(id string) (*domain.Monitor, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	m, ok := r.monitors[id]
-	if !ok {
-		return nil, nil
+func (r *MonitorRepository) FindByID(ctx context.Context, id string) (*domain.Monitor, error) {
+	row, err := r.queries.GetMonitorByID(ctx, id)
+	if err != nil {
+		return nil, err
 	}
-	return m, nil
+	return toDomain(row), nil
+}
+
+func toDomain(row db.Monitor) *domain.Monitor {
+	return &domain.Monitor{
+		ID:             row.ID,
+		URL:            row.Url,
+		IntervalSec:    int(row.IntervalSec),
+		ExpectedStatus: int(row.ExpectedStatus),
+		CreatedAt:      row.CreatedAt,
+	}
 }

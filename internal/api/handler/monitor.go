@@ -28,7 +28,7 @@ func (h *MonitorHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m, err := h.service.Create(req.URL, req.IntervalSec, req.ExpectedStatus)
+	m, err := h.service.Create(r.Context(), req.URL, req.IntervalSec, req.ExpectedStatus)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -42,7 +42,7 @@ func (h *MonitorHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MonitorHandler) List(w http.ResponseWriter, r *http.Request) {
-	result, err := h.service.List()
+	result, err := h.service.List(r.Context())
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
@@ -57,7 +57,7 @@ func (h *MonitorHandler) List(w http.ResponseWriter, r *http.Request) {
 func (h *MonitorHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
-	m, err := h.service.GetByID(id)
+	m, err := h.service.GetByID(r.Context(), id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return

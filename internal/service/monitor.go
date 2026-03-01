@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 
 	"github.com/AksanovK/url-monitor/internal/domain"
@@ -15,30 +16,27 @@ func NewMonitorService(repo *repository.MonitorRepository) *MonitorService {
 	return &MonitorService{repo: repo}
 }
 
-func (s *MonitorService) Create(url string, intervalSec int, expectedStatus int) (*domain.Monitor, error) {
+func (s *MonitorService) Create(ctx context.Context, url string, intervalSec int, expectedStatus int) (*domain.Monitor, error) {
 	m := domain.NewMonitor(url, intervalSec, expectedStatus)
 
 	if err := m.Validate(); err != nil {
 		return nil, err
 	}
 
-	if err := s.repo.Save(m); err != nil {
+	if err := s.repo.Save(ctx, m); err != nil {
 		return nil, err
 	}
 
 	return m, nil
 }
 
-func (s *MonitorService) List() ([]*domain.Monitor, error) {
-	return s.repo.FindAll()
+func (s *MonitorService) List(ctx context.Context) ([]*domain.Monitor, error) {
+	return s.repo.FindAll(ctx)
 }
 
-func (s *MonitorService) GetByID(id string) (*domain.Monitor, error) {
-	m, err := s.repo.FindByID(id)
+func (s *MonitorService) GetByID(ctx context.Context, id string) (*domain.Monitor, error) {
+	m, err := s.repo.FindByID(ctx, id)
 	if err != nil {
-		return nil, err
-	}
-	if m == nil {
 		return nil, errors.New("monitor not found")
 	}
 	return m, nil
