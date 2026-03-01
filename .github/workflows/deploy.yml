@@ -46,6 +46,6 @@ jobs:
             cd /opt/url-monitor
             export DOCKER_IMAGE=${{ secrets.DOCKER_USERNAME }}/url-monitor:latest
             docker pull $DOCKER_IMAGE
-            docker-compose down
-            docker-compose up -d
+            docker compose down
+            docker compose up -d
           EOF
