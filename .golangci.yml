@@ -1,0 +1,6 @@
+linters:
+  enable:
+    - errcheck      # не забыл ли обработать error
+    - govet         # подозрительные конструкции
+    - staticcheck   # продвинутый анализ
+    - unused        # неиспользуемый код
