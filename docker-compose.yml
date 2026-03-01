@@ -17,6 +17,8 @@ services:
       POSTGRES_USER: monitor
       POSTGRES_PASSWORD: monitor
       POSTGRES_DB: monitor
+    ports:
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
