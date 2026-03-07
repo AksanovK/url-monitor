@@ -49,7 +49,7 @@ func main() {
 
 	monitorRepo := repository.NewMonitorRepository(pool)
 	resultRepo := repository.NewCheckResultRepository(pool)
-	scheduler := worker.NewScheduler(monitorRepo, resultRepo, 5, 30*time.Second)
+	scheduler := worker.NewScheduler(monitorRepo, resultRepo, 5, cfg.CheckInterval)
 	scheduler.Start(ctx)
 
 	router := api.NewRouter(pool)

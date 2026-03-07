@@ -6,6 +6,7 @@ services:
       - "8080:8080"
     environment:
       - DATABASE_URL=postgres://monitor:monitor@db:5432/monitor?sslmode=disable
+      - CHECK_INTERVAL_SEC=3600
     depends_on:
       db:
         condition: service_healthy
