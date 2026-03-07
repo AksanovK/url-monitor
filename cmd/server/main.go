@@ -4,8 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/AksanovK/url-monitor/internal/repository"
+	"github.com/AksanovK/url-monitor/internal/worker"
 	"log"
 	"net/http"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -39,10 +44,32 @@ func main() {
 	}
 	log.Println("connected to database")
 
-	router := api.NewRouter(pool)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer stop()
 
-	fmt.Printf("Server starting on %s\n", cfg.Addr())
-	if err := http.ListenAndServe(cfg.Addr(), router); err != nil {
-		log.Fatalf("server failed: %v", err)
+	monitorRepo := repository.NewMonitorRepository(pool)
+	resultRepo := repository.NewCheckResultRepository(pool)
+	scheduler := worker.NewScheduler(monitorRepo, resultRepo, 5, 30*time.Second)
+	scheduler.Start(ctx)
+
+	router := api.NewRouter(pool)
+	server := &http.Server{Addr: cfg.Addr(), Handler: router}
+
+	go func() {
+		fmt.Printf("Server starting on %s\n", cfg.Addr())
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("server failed: %v", err)
+		}
+	}()
+
+	<-ctx.Done()
+	log.Println("shutting down...")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Printf("server shutdown error: %v", err)
 	}
+
+	log.Println("server stopped")
 }

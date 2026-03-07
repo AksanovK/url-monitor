@@ -6,7 +6,18 @@ package db
 
 import (
 	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type CheckResult struct {
+	ID         string
+	MonitorID  string
+	StatusCode int32
+	LatencyMs  int32
+	Error      pgtype.Text
+	CheckedAt  time.Time
+}
 
 type Monitor struct {
 	ID             string
